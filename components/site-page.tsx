@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { ArrowRight, ChevronDown, CircleGauge, Globe2, Menu, Network, ShieldCheck, X, Zap, type LucideIcon } from "lucide-react";
 
 type Item = { label: string; href: string };
 type Group = { label: string; href: string; items?: Item[] };
 type LinkProps = { href: string; className?: string; children: ReactNode; onClick?: () => void; "aria-label"?: string };
+
+const CONTACT_EMAIL = "sales@ei-cs.com";
 
 function Link({ href, className, children, onClick, "aria-label": ariaLabel }: LinkProps) {
   return <a href={href} className={className} onClick={onClick} aria-label={ariaLabel}>{children}</a>;
@@ -161,6 +163,49 @@ function StandardPage({ slug }: { slug: string }) {
     <section className="cta compact"><p className="eyebrow">WORK WITH ELITE ENERGY</p><h2>Bring clarity to your next challenge<span>.</span></h2><Link className="button primary" href="/contact">Start a conversation <ArrowRight size={18}/></Link></section></main><Footer/></>;
 }
 
+function ContactPage() {
+  const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    setStatus("sending");
+
+    try {
+      const response = await fetch(`https://formsubmit.co/ajax/${CONTACT_EMAIL}`, {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: new FormData(form),
+      });
+      if (!response.ok) throw new Error("Submission failed");
+      form.reset();
+      setStatus("success");
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  return <><Header/><main>
+    <section className="page-hero contact-hero"><div className="page-hero-inner"><p className="eyebrow">CONTACT ELITE ENERGY</p><h1>Let&apos;s talk about what your operation needs next<span>.</span></h1><p>Tell us about the challenge, opportunity or capability you are exploring. We will connect you with the right person at Elite Energy.</p></div><div className="page-motif" aria-hidden="true"><i/><i/><i/><i/></div></section>
+    <section className="contact-section">
+      <div className="contact-intro"><p className="eyebrow">START A CONVERSATION</p><h2>How can we help?</h2><p>Share a few details and our team will respond as soon as possible.</p><div className="contact-detail"><span>EMAIL</span><a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a></div></div>
+      <form className="contact-form" onSubmit={handleSubmit}>
+        <input type="hidden" name="_subject" value="New Elite Energy website enquiry"/>
+        <input className="contact-honey" type="text" name="_honey" tabIndex={-1} autoComplete="off" aria-hidden="true"/>
+        <div className="form-grid">
+          <label>Full name<span>*</span><input name="name" type="text" autoComplete="name" required/></label>
+          <label>Work email<span>*</span><input name="email" type="email" autoComplete="email" required/></label>
+          <label>Company<input name="company" type="text" autoComplete="organization"/></label>
+          <label>Phone number<input name="phone" type="tel" autoComplete="tel"/></label>
+        </div>
+        <label>How can we help?<span>*</span><textarea name="message" rows={7} required/></label>
+        <div className="form-submit"><p>By submitting this form, you agree that Elite Energy may contact you about your enquiry.</p><button className="button primary" type="submit" disabled={status === "sending"}>{status === "sending" ? "Sending…" : <>Send enquiry <ArrowRight size={18}/></>}</button></div>
+        <div className={`form-status ${status}`} aria-live="polite">{status === "success" && "Thank you. Your enquiry has been sent to our team."}{status === "error" && <>We couldn&apos;t send your enquiry. Please email us at <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</>}</div>
+      </form>
+    </section>
+  </main><Footer/></>;
+}
+
 function VisionPage() {
   const principles = [
     { number: "01", title: "Solve the problem behind the project", text: "Elite Energy was founded in response to a recurring challenge: ambitious projects can still fall short when experienced leadership and genuine subject-matter expertise are missing. We bring both into the work from the outset." },
@@ -246,5 +291,6 @@ export function SitePage({ slug }: { slug: string }) {
   if (slug === "about/global-presence") return <GlobalPresencePage/>;
   if (slug === "partnerships") return <PartnershipsPage/>;
   if (slug === "careers" || slug === "careers/cadet-programme") return <CareersPage/>;
+  if (slug === "contact") return <ContactPage/>;
   return <StandardPage slug={slug}/>;
 }
